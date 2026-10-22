@@ -20,13 +20,15 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (SmsRetriever.SMS_RETRIEVED_ACTION == intent.action) {
-            val extras = intent.extras
-            val status = extras!!.get(SmsRetriever.EXTRA_STATUS) as Status
+            val extras = intent.extras ?: return
+            val status = extras.get(SmsRetriever.EXTRA_STATUS) as? Status ?: return
 
             when (status.statusCode) {
                 CommonStatusCodes.SUCCESS -> {
                     // Get SMS message contents
-                    val sms: String = extras.get(SmsRetriever.EXTRA_SMS_MESSAGE) as String
+                    // SMS User Consent broadcasts (e.g. from smart_auth via the GoKwik SDK) share
+                    // this action but carry EXTRA_CONSENT_INTENT, not the message: ignore them.
+                    val sms = extras.getString(SmsRetriever.EXTRA_SMS_MESSAGE) ?: return
                     mySmsListener?.apply {
                         onOtpReceived(message = sms)
                     }
@@ -51,5 +53,3 @@ interface MySmsListener {
     fun onOtpTimeout()
 
 }
-
-
